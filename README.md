@@ -3,11 +3,12 @@ Executive Summary
 
 This project presents a controlled network laboratory designed to observe, capture, and analyze HTTP traffic behavior from a Security Operations Center (SOC) perspective. The lab focuses on distinguishing normal client-server communication from abnormal traffic patterns, using packet captures and server-side logs as primary sources of evidence.
 
+
 Two full packet capture files were collected:
 
-One representing baseline (normal) HTTP traffic
+• One representing baseline (normal) HTTP traffic
 
-One representing anomalous high-volume HTTP traffic
+• One representing anomalous high-volume HTTP traffic
 
 These captures were analyzed to identify behavioral differences at the network and transport layers, correlate findings with application logs, and assess the operational impact on both the target service and the originating client.
 
@@ -15,35 +16,24 @@ Environment Overview
 
 The environment was built using the VirtualBox hypervisor and consists of a centralized network architecture with the following components:
 
-OPNsense Firewall/Router
+• OPNsense Firewall/Router
+    • Default gateway for all internal hosts
+    • Provides routing, NAT, DNS, and DHCP services
+    • Single enforcement and inspection point
 
-Default gateway for all internal hosts
+  Ubuntu Server
+    • Hosts an Apache HTTP web server
+    • Serves a static HTML file used for testing HTTP communication
+    • Internal IP address: 192.168.1.174
 
-Provides routing, NAT, DNS, and DHCP services
+  Ubuntu Desktop
+    • Acts as a legitimate client
+    • Used for packet capture with Wireshark/dumpcap
+    • NIC configured in promiscuous mode
 
-Single enforcement and inspection point
-
-Ubuntu Server
-
-Hosts an Apache HTTP web server
-
-Serves a static HTML file used for testing HTTP communication
-
-Internal IP address: 192.168.1.174
-
-Ubuntu Desktop
-
-Acts as a legitimate client
-
-Used for packet capture with Wireshark/dumpcap
-
-NIC configured in promiscuous mode
-
-Additional Linux Host
-
-Used exclusively to generate increased HTTP request volume
-
-Represents a misbehaving internal client
+  Additional Linux Host
+    • Used exclusively to generate increased HTTP request volume
+    • Represents a misbehaving internal client
 
 All internal machines access the Internet exclusively through the OPNsense firewall, allowing clear visibility of traffic flow and side effects during abnormal conditions.
 
