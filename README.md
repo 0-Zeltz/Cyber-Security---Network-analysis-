@@ -1,210 +1,293 @@
-SOC-Style Network Traffic Analysis and Anomaly Investigation Lab
-Executive Summary
+# SOC-Style Network Traffic Analysis and Anomaly Investigation Lab
 
-This project presents a controlled network laboratory designed to observe, capture, and analyze HTTP traffic behavior from a Security Operations Center (SOC) perspective. The lab focuses on distinguishing normal client-server communication from abnormal traffic patterns, using packet captures and server-side logs as primary sources of evidence.
+## Executive Summary
 
+This project presents a controlled network laboratory designed to observe, capture, and analyze HTTP traffic behavior from a **Security Operations Center (SOC)** perspective.
 
-Two full packet capture files were collected:
+The objective of the lab is to distinguish **normal client-server communication** from **abnormal traffic patterns** using packet captures and server-side logs as primary evidence.
 
-• One representing baseline (normal) HTTP traffic
+Two full packet capture files were collected during the project:
 
-• One representing anomalous high-volume HTTP traffic
+* One representing **baseline (normal) HTTP traffic**
+* One representing **anomalous high-volume HTTP traffic**
 
-These captures were analyzed to identify behavioral differences at the network and transport layers, correlate findings with application logs, and assess the operational impact on both the target service and the originating client.
+The project focuses on **visibility, evidence collection, correlation, and impact analysis**, rather than exploitation or penetration testing.
 
-Environment Overview
+---
 
-The environment was built using the VirtualBox hypervisor and consists of a centralized network architecture with the following components:
+## Environment Overview
 
-• OPNsense Firewall/Router
-    • Default gateway for all internal hosts
-    • Provides routing, NAT, DNS, and DHCP services
-    • Single enforcement and inspection point
+The lab environment was built using the **VirtualBox hypervisor** and consists of the following virtual machines:
 
-  Ubuntu Server
-    • Hosts an Apache HTTP web server
-    • Serves a static HTML file used for testing HTTP communication
-    • Internal IP address: 192.168.1.174
+### OPNsense Firewall / Router
 
-  Ubuntu Desktop
-    • Acts as a legitimate client
-    • Used for packet capture with Wireshark/dumpcap
-    • NIC configured in promiscuous mode
+* Default gateway for all internal hosts
+* Provides routing, NAT, DNS, and DHCP services
+* Central point of traffic inspection and control
 
-  Additional Linux Host
-    • Used exclusively to generate increased HTTP request volume
-    • Represents a misbehaving internal client
+### Ubuntu Server
 
-All internal machines access the Internet exclusively through the OPNsense firewall, allowing clear visibility of traffic flow and side effects during abnormal conditions.
+* Hosts an Apache HTTP web server
+* Serves a static HTML file for testing HTTP communication
+* Internal IP address: `192.168.1.174`
 
-Network Architecture
+### Ubuntu Desktop
 
-The network was almost entirely configured within the OPNsense virtual machine, using two network interfaces to enforce segmentation:
+* Acts as a legitimate client
+* Used for packet capture with Wireshark / dumpcap
+* Network interface configured in promiscuous mode
 
-LAN Interface
+### Additional Linux Client
 
-Connects all internal hosts
+* Used exclusively to generate increased HTTP request volume
+* Represents a misbehaving internal client
 
-Handles internal routing and service delivery
+---
 
-WAN Interface
+## Network Architecture
 
-Connected to a NAT network
+The network was almost entirely configured **within the OPNsense virtual machine**, using two network interfaces to enforce segmentation:
 
-Provides controlled Internet access to internal systems
+### LAN Interface
 
-This design mirrors a simplified enterprise perimeter model and allows observation of how abnormal internal traffic affects both internal services and external connectivity.
+* Connects all internal hosts
+* Handles internal routing and service delivery
 
-Baseline Traffic Capture (Normal Behavior)
-Objective
+### WAN Interface
 
-Establish a baseline of legitimate HTTP traffic to serve as a reference point for anomaly detection.
+* Connected to a NAT network
+* Provides Internet access to internal systems
 
-Method
+All internal virtual machines access the Internet **exclusively through OPNsense**, allowing clear observation of traffic flow and operational impact.
 
-Normal client-server communication was generated using standard HTTP requests to the Apache server. Traffic was captured on the client machine using Wireshark/dumpcap.
+---
 
-Evidence
+## Web Server Configuration (Ubuntu Server)
 
-File: normal-client-server-traffic.pcapng
-This packet capture contains all network traffic observed during normal HTTP communication, including:
+The Ubuntu Server virtual machine was configured to host an Apache web server used for HTTP testing.
 
-TCP three-way handshakes
+### Apache Installation and Setup
 
-Stable TCP sessions
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install apache2 -y
+```
 
-HTTP GET requests
+### Apache Service Verification
 
-HTTP 200 OK responses
+```bash
+systemctl status apache2
+```
 
-Observations
+### Test HTML File Creation
 
-Analysis of the baseline capture revealed:
+```bash
+sudo nano /var/www/html/test.html
+```
 
-Low and consistent packet rate
+```html
+<html>
+  <body>
+    <h1>Test HTTP Server</h1>
+  </body>
+</html>
+```
 
-Minimal number of concurrent TCP sessions
+### Apache Restart and Port Verification
 
-Predictable request/response pattern
+```bash
+sudo systemctl restart apache2
+ss -tulnp | grep :80
+```
 
-Stable session duration
+---
 
-No signs of retransmissions or connection churn
+## Client Configuration and Traffic Capture
 
-This capture establishes what expected and healthy traffic looks like in the environment.
+The Ubuntu Desktop virtual machine was used to capture network traffic using **Wireshark / dumpcap**.
 
-Anomalous Traffic Capture (Abnormal Behavior)
-Objective
+### dumpcap Permissions Configuration
 
-Simulate abnormal client behavior by generating an excessive volume of legitimate HTTP requests and observe deviations from baseline behavior.
+Initial permission issues were encountered when selecting the capture interface.
+These were resolved by verifying capabilities and group membership.
 
-Method
+#### Verification Steps
 
-A loop-based request mechanism using standard Linux tools (curl) was used to generate a large number of HTTP GET requests targeting the same web resource in a short time window. No packet crafting, exploitation, or protocol abuse was involved.
+```bash
+ls -l /usr/bin/dumpcap
+getcap /usr/bin/dumpcap
+```
 
-Evidence
+#### Capability Adjustment (If Required)
 
-File: anomalous-client-server-traffic.pcapng
+```bash
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/dumpcap
+```
+
+### Wireshark Group Configuration
+
+```bash
+sudo dpkg-reconfigure wireshark-common
+sudo usermod -aG wireshark $USER
+```
+
+After logging out and back in, available capture interfaces were verified:
+
+```bash
+dumpcap -D
+```
+
+Traffic was captured primarily on the **enp0s3** interface, with the NIC operating in **promiscuous mode**.
+
+---
+
+## Baseline Traffic Capture (Normal Behavior)
+
+### Objective
+
+Establish a baseline of legitimate HTTP traffic to enable comparison with abnormal behavior.
+
+### Method
+
+Normal client-server communication was generated using standard HTTP requests:
+
+```bash
+curl http://192.168.1.174
+curl -v http://192.168.1.174
+```
+
+### Evidence
+
+* File: `normal-client-server-traffic.pcapng`
+
+This packet capture contains:
+
+* TCP three-way handshakes
+* Stable TCP sessions
+* HTTP GET requests
+* HTTP 200 OK responses
+
+### Observations
+
+* Low and consistent packet rate
+* Predictable request and response pattern
+* Minimal number of concurrent TCP sessions
+* Stable session duration
+
+---
+
+## Anomalous Traffic Capture (Abnormal Behavior)
+
+### Objective
+
+Simulate abnormal client behavior by generating a high volume of legitimate HTTP requests over a short period of time.
+
+### Method
+
+Traffic was generated using standard Linux command-line tools, without packet crafting or exploitation:
+
+```bash
+for i in {1..5000}; do
+  curl http://192.168.1.174/test.html
+done
+```
+
+### Evidence
+
+* File: `anomalous-client-server-traffic.pcapng`
+
 This packet capture contains the complete packet-level data for the abnormal traffic scenario.
 
-Observations
+### Observations
 
-Compared to the baseline capture, the anomalous capture showed:
+Compared to baseline traffic:
 
-A significant increase in packet rate
+* Significant increase in packet rate
+* Repeated HTTP GET requests for the same resource
+* Large number of short-lived TCP connections
+* Rapid creation and teardown of TCP sessions
+* Clear deviation from expected traffic behavior
 
-Repeated HTTP GET requests for the same resource
+---
 
-Large number of short-lived TCP connections
+## Server-Side Log Correlation
 
-Rapid creation and teardown of TCP sessions
+Apache server logs were monitored during abnormal traffic generation:
 
-Clear deviation from normal traffic patterns
+```bash
+sudo tail -f /var/log/apache2/access.log
+```
 
-While the traffic remained protocol-compliant, its volume and frequency caused observable operational effects.
+### Observed Behavior
 
-Server-Side Correlation (Apache Logs)
+* Rapid growth of log entries
+* Repeated requests for the same file
+* Very short time intervals between requests
 
-During the anomalous traffic generation, the Apache server’s access logs were monitored.
+This confirmed direct correlation between **network-level packet captures** and **application-layer logs**.
 
-Observed behavior:
+---
 
-Rapid growth of access.log
+## Impact Analysis
 
-Repeated requests for the same file
+### Target Service Impact
 
-Timestamps clustered very closely together
+* The Apache web server continued responding to requests
+* Request volume was significantly higher than baseline
+* Demonstrates how legitimate protocol traffic can still cause service strain through volume
 
-This provided direct correlation between:
+### Client-Side Impact
 
-Network-level observations in the .pcap files
+* The client generating traffic experienced temporary loss of Internet connectivity
+* Connectivity was restored after stopping the request loop
 
-Application-layer evidence on the server
+Likely causes include:
 
-This correlation is a critical SOC activity, linking packet-level data to application behavior.
+* Local resource exhaustion
+* Connection tracking limits
 
-Impact Analysis
-Target Service
+This demonstrates that excessive outbound traffic can negatively impact the originating host itself.
 
-The Apache web server continued responding to requests
+---
 
-However, the request volume was significantly higher than baseline
+## Firewall and Defensive Considerations
 
-Demonstrates how legitimate protocol usage can still create service strain
+No active defensive rules were enabled on the OPNsense firewall during testing.
+This was intentional to allow unrestricted observation of traffic behavior and impact.
 
-Originating Client
+### Conceptual Considerations
 
-The client generating abnormal traffic experienced temporary loss of Internet connectivity
+* IP-based blocking has limited effectiveness due to ease of IP changes
+* TCP session blocking provides short-term containment only
+* Distributed attacks cannot be mitigated solely at the perimeter
+* Firewalls provide visibility and containment, not definitive protection
 
-Connectivity was restored after traffic generation stopped
+Advanced mechanisms such as **IDS/IPS** or **WAFs** were intentionally excluded.
 
-Likely causes include local resource exhaustion, NAT table pressure, or connection tracking limits
+---
 
-This highlights an often-overlooked effect:
-excessive outbound traffic can negatively impact the source host itself, not just the target service.
+## Limitations
 
-Firewall and Defensive Considerations
+* Traffic originated from a single internal source
+* No distributed attack simulation (DDoS)
+* No application-layer protection mechanisms
+* Analysis constrained by virtualized environment resources
 
-At the time of testing, no active defensive rules were enabled on the OPNsense firewall. This was intentional to allow unrestricted observation of traffic behavior and impact.
+---
 
-From a conceptual analysis standpoint:
+## Lessons Learned
 
-IP-based blocking offers limited protection due to ease of IP changes
+* Establishing a baseline is essential for anomaly detection
+* Legitimate protocol traffic can still cause operational impact through volume
+* Packet captures and application logs complement each other during investigations
+* Abnormal traffic can affect services, infrastructure, and the originating host
+* SOC activities focus on detection, evidence, and escalation rather than permanent fixes
 
-TCP session blocking is effective only for short-term containment
+---
 
-Volume-based and distributed attacks cannot be fully mitigated at a single perimeter device
+## Conclusion
 
-Firewalls serve as containment and visibility tools, not definitive solutions
+This lab demonstrates how full packet captures and server-side logs can be used together to identify and analyze abnormal HTTP traffic in a controlled environment.
 
-Advanced mechanisms such as IDS/IPS, WAFs, or upstream mitigation were intentionally excluded from this lab.
-
-Limitations
-
-Traffic originated from a single internal source
-
-No simulation of distributed attacks (DDoS)
-
-No application-layer protections in place
-
-Analysis constrained by virtualized environment resources
-
-Focused on observation and analysis rather than permanent mitigation
-
-Lessons Learned
-
-Establishing a baseline is essential for meaningful anomaly detection
-
-Legitimate protocol traffic can still cause operational impact through volume
-
-Packet captures and application logs complement each other in investigations
-
-Abnormal traffic can affect intermediate devices and the originating host
-
-SOC responsibilities prioritize detection, evidence, and escalation over long-term fixes
-
-Conclusion
-
-This lab demonstrates how full packet captures and server-side logs can be used together to identify and analyze abnormal network behavior. By comparing baseline and anomalous traffic scenarios, it highlights realistic operational impacts and the limitations of perimeter-based defenses.
-
-The project aligns closely with real-world SOC workflows, emphasizing visibility, correlation, and analytical reasoning over tool-driven exploitation.
+By comparing baseline and anomalous scenarios, the project highlights realistic operational impacts and the limitations of perimeter-based defenses, aligning closely with real-world **SOC workflows**.
