@@ -88,13 +88,7 @@ systemctl status apache2
 sudo nano /var/www/html/test.html
 ```
 
-```html
-<html>
-  <body>
-    <h1>Test HTTP Server</h1>
-  </body>
-</html>
-```
+![HTML Test File](images/html-test-file.png)
 
 ### Apache Restart and Port Verification
 
