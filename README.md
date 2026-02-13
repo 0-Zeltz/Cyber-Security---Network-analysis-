@@ -199,7 +199,7 @@ done
 
 ### Evidence
 
-* File: `anomalous-client-server-traffic.pcapng`
+* File: [`anomalous-client-server-traffic.pcapng`](https://github.com/0-Zeltz/linux-network-traffic-analysis/blob/f9e3c805d5e9b0c6f0a2a7542b06abcc225db603/anomalous-client-server-traffic.pcapng)
 
 This packet capture contains the complete packet-level data for the abnormal traffic scenario.
 
