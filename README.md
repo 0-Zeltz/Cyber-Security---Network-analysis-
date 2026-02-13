@@ -163,7 +163,7 @@ curl -v http://192.168.1.174
 
 ### Evidence
 
-* File: `normal-client-server-traffic.pcapng`
+* File: [`normal-client-server-traffic.pcapng`](https://github.com/0-Zeltz/linux-network-traffic-analysis/blob/f9e3c805d5e9b0c6f0a2a7542b06abcc225db603/anomalous-client-server-traffic.pcapng)
 
 This packet capture contains:
 
