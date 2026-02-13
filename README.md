@@ -154,6 +154,8 @@ Establish a baseline of legitimate HTTP traffic to enable comparison with abnorm
 
 Normal client-server communication was generated using standard HTTP requests:
 
+![](images/normal-http-behaviour.png)
+
 ```bash
 curl http://192.168.1.174
 curl -v http://192.168.1.174
