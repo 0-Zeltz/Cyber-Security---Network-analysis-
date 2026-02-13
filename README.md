@@ -46,6 +46,8 @@ The lab environment was built using the **VirtualBox hypervisor** and consists o
 
 ## Network Architecture
 
+![OPNsense interfaces](images/opnsense-interfaces.png)
+
 The network was almost entirely configured **within the OPNsense virtual machine**, using two network interfaces to enforce segmentation:
 
 ### LAN Interface
